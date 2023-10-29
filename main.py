@@ -1,3 +1,5 @@
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
 from g4f import Provider, models
 from langchain.llms.base import LLM
 from langchain_g4f import G4FLLM
@@ -7,7 +9,13 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Chroma
 from langchain.chains import RetrievalQA
 
-def main():
+app = FastAPI()
+
+class QuestionInput(BaseModel):
+    question: str
+
+@app.post("/ask")
+async def ask_question(question_input: QuestionInput):
     llm = G4FLLM(
         model=models.default,
         provider=Provider.Vercel,
@@ -28,9 +36,10 @@ def main():
 
     qa_chain = RetrievalQA.from_chain_type(llm=llm, chain_type="stuff", retriever=vectorstore.as_retriever())
 
-    question = input('輸入問題：')
-    result = qa_chain({"query": question})
-    print(result)
+    result = qa_chain({"query": question_input.question})
+    
+    return {"answer": result}
 
 if __name__ == "__main__":
-    main()
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8080)

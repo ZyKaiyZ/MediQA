@@ -15,7 +15,7 @@ RUN apt-get install -y git
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
 # Make port 80 available to the world outside this container
-EXPOSE 80
+EXPOSE 8080
 
 # Run your Python script
 CMD ["python", "main.py"]
