@@ -1,0 +1,5 @@
+g4f
+git+https://github.com/MIDORIBIN/langchain-gpt4free.git
+chromadb
+sentence-transformers
+gpt4all
