@@ -14,8 +14,8 @@ RUN apt-get update && apt-get install -y nodejs npm
 RUN apt-get install -y git
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
-# Make port 80 available to the world outside this container
-EXPOSE 8080
+# Make port 5000 available to the world outside this container
+EXPOSE 5000
 
 # Run your Python script
 CMD ["python", "main.py"]
