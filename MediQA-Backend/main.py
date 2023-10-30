@@ -14,8 +14,13 @@ app = FastAPI()
 class QuestionInput(BaseModel):
     question: str
 
-@app.post("/ask")
-async def ask_question(question_input: QuestionInput):
+# Initialize llm and vectorstore at the module level
+llm = None
+vectorstore = None
+
+async def initialize_llm_and_vectorstore() -> None:
+    global llm, vectorstore
+
     llm = G4FLLM(
         model=models.default,
         provider=Provider.Vercel,
@@ -33,6 +38,15 @@ async def ask_question(question_input: QuestionInput):
     embedding = GPT4AllEmbeddings()
 
     vectorstore = Chroma.from_documents(documents=all_splits, embedding=embedding)
+
+@app.on_event("startup")
+async def startup_event():
+    await initialize_llm_and_vectorstore()
+
+@app.post("/ask")
+async def ask_question(question_input: QuestionInput):
+    if llm is None or vectorstore is None:
+        raise HTTPException(status_code=503, detail="LLM and Vectorstore not initialized")
 
     qa_chain = RetrievalQA.from_chain_type(llm=llm, chain_type="stuff", retriever=vectorstore.as_retriever())
 
