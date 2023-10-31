@@ -10,14 +10,13 @@ let inputQuestion = ref('');
 const UpdateQuestionAndAnswer = () => {
     question.value = inputQuestion.value;
     getAnswer();
+    inputQuestion.value = "";
 }
 
 const getAnswer = async () => {
     try {
-        const response = await axios.get(`${ baseUrl }/ask`, {
-            params: {
-                question: question.value,
-            },
+        const response = await axios.post(`${ baseUrl }/ask`, {
+            "question": question.value
         });
         answer.value = response.data.answer;
     } catch (error) {

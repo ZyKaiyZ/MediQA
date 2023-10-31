@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from g4f import Provider, models
 from langchain.llms.base import LLM
@@ -11,8 +12,23 @@ from langchain.chains import RetrievalQA
 
 app = FastAPI()
 
+origins = [
+    "http://localhost",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 class QuestionInput(BaseModel):
     question: str
+
+class QuestionOutput(BaseModel):
+    answer: str
 
 # Initialize llm and vectorstore at the module level
 llm = None
@@ -43,7 +59,7 @@ async def initialize_llm_and_vectorstore() -> None:
 async def startup_event():
     await initialize_llm_and_vectorstore()
 
-@app.post("/ask")
+@app.post("/api/ask", response_model=QuestionOutput)
 async def ask_question(question_input: QuestionInput):
     if llm is None or vectorstore is None:
         raise HTTPException(status_code=503, detail="LLM and Vectorstore not initialized")
