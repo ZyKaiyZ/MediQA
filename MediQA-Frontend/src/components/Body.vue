@@ -1,24 +1,48 @@
 <script setup>
+import { ref } from 'vue';
 import axios from 'axios';
+import { baseUrl } from '../main';
 
+let question = ref('');
+let answer = ref('');
+let inputQuestion = ref('');
+
+const UpdateQuestionAndAnswer = () => {
+    question.value = inputQuestion.value;
+    getAnswer();
+}
+
+const getAnswer = async () => {
+    try {
+        const response = await axios.get(`${ baseUrl }/ask`, {
+            params: {
+                question: question.value,
+            },
+        });
+        answer.value = response.data.answer;
+    } catch (error) {
+        console.error('Error fetching answer:', error);
+    }
+}
 </script>
 <template>
     <div class="main-body">
         <div class="question">
-            Question : 
+            <p class="title">Question</p>
+            <p class="text">{{ question }}</p>
         </div>
         <div class="answer">
-            Answer : 
+            <p class="title">Answer</p>
+            <p class="text">{{ answer }}</p>
         </div>
         <div class="prompt-area">
-            <input type="text" name="input" class="input-prompt">
-            <font-awesome-icon icon="fa-solid fa-paper-plane" class="send-btn"/>
+            <input v-model="inputQuestion" type="text" name="input" class="input-prompt" placeholder="Input your question">
+            <font-awesome-icon icon="fa-solid fa-paper-plane" class="send-btn" @click="UpdateQuestionAndAnswer"/>
         </div>
     </div>
 </template>
 <style scoped>
     .main-body {
-        display: inherit;
         margin: auto;
         padding: 10px;
         color: white;
@@ -43,6 +67,18 @@ import axios from 'axios';
         width: 95%;
         height: 20vh;
     }
+    .title{
+        color: #7db926;
+        font-weight: bold;
+        font-size: 30px;
+        margin-top: 3px;
+        margin-bottom: 7px;
+    }
+    .text{
+        font-size: 20px;
+        margin-top: 3px;
+        margin-bottom: 3px;
+    }
 
     .prompt-area{
         display: flex;
@@ -64,6 +100,10 @@ import axios from 'axios';
         width: 70%;
     }
 
+    .input-prompt::placeholder{
+        color: rgba(255, 255, 255, 0.534);
+    }
+
     .send-btn{
         background-color: rgba(125, 125, 138, 0.8);
         border-radius: 0px 5px 5px 0px;
@@ -80,8 +120,3 @@ import axios from 'axios';
         transform: translateX(0.5px);
     }
 </style>
-
-<div class="inputWithin">
-    <input type="text" class=" inputPaddingRight" placeholder="right button">
-    <button class="btn">button</button>
-  </div>
