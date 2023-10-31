@@ -8,7 +8,10 @@ WORKDIR /app
 COPY . /app
 
 # Install Node.js and npm using apt-get
-RUN apt-get update && apt-get install -y nodejs npm
+RUN apt-get update
+RUN apt-get install curl gnupg -y
+RUN curl -sL https://deb.nodesource.com/setup_20.x | bash -
+RUN apt-get install nodejs -y
 
 # Install any needed packages specified in requirements.txt
 RUN apt-get install -y git
