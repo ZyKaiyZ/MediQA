@@ -37,23 +37,28 @@ vectorstore = None
 async def initialize_llm_and_vectorstore() -> None:
     global llm, vectorstore
 
-    llm = G4FLLM(
-        model=models.default,
-        provider=Provider.Vercel,
-    )
+    try:
+        llm = G4FLLM(
+            model=models.default,
+            provider=Provider.Vercel,
+        )
 
-    # load the files
-    loader = TextLoader("./output.txt")
-    data = loader.load()
+        # load the files
+        loader = TextLoader("./output.txt")
+        data = loader.load()
 
-    # split text
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1024, chunk_overlap=128)
-    all_splits = text_splitter.split_documents(data)
+        # split text
+        text_splitter = RecursiveCharacterTextSplitter(chunk_size=1024, chunk_overlap=128)
+        all_splits = text_splitter.split_documents(data)
 
-    # embeddings
-    embedding = GPT4AllEmbeddings()
+        # embeddings
+        embedding = GPT4AllEmbeddings()
 
-    vectorstore = Chroma.from_documents(documents=all_splits, embedding=embedding)
+        vectorstore = Chroma.from_documents(documents=all_splits, embedding=embedding)
+
+    except Exception as e:
+        # Handle exceptions and raise an HTTPException with an appropriate status code
+        raise HTTPException(status_code=500, detail="Error initializing LLM and Vectorstore")
 
 @app.on_event("startup")
 async def startup_event():
@@ -64,11 +69,16 @@ async def ask_question(question_input: QuestionInput):
     if llm is None or vectorstore is None:
         raise HTTPException(status_code=503, detail="LLM and Vectorstore not initialized")
 
-    qa_chain = RetrievalQA.from_chain_type(llm=llm, chain_type="stuff", retriever=vectorstore.as_retriever())
+    try:
+        qa_chain = RetrievalQA.from_chain_type(llm=llm, chain_type="stuff", retriever=vectorstore.as_retriever())
 
-    result = qa_chain({"query": question_input.question})
-    
-    return {"answer": result}
+        result = qa_chain({"query": question_input.question})
+        
+        return {"answer": result}
+
+    except Exception as e:
+        # Handle exceptions and raise an HTTPException with an appropriate status code
+        raise HTTPException(status_code=500, detail="Error processing the question")
 
 if __name__ == "__main__":
     import uvicorn
