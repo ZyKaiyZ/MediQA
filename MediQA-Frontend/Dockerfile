@@ -1,4 +1,4 @@
-FROM node:latest as build
+FROM node:20.9.0-slim as build
 
 WORKDIR /app
 COPY package*.json yarn.lock ./
