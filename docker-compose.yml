@@ -19,8 +19,6 @@ services:
     command: uvicorn main:app --host 0.0.0.0 --port 5000
     networks:
       - default
-volumes:
-  db_data:
 networks:
   default:
     driver: bridge
