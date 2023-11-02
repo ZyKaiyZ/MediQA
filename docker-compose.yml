@@ -13,6 +13,8 @@ services:
     build: 
       context: ./MediQA-Backend/
       dockerfile: Dockerfile
+    env_file:
+      - ./MediQA-Backend/.env  
     restart: always
     ports:
       - 5000:5000
