@@ -46,7 +46,7 @@ async def initialize_llm_and_vectorstore() -> None:
         openai_api_key = os.getenv("OPENAI_API_KEY")
 
         # load the files
-        loader = TextLoader("./output.txt")
+        loader = TextLoader("./data.txt")
         data = loader.load()
 
         # split text
