@@ -42,6 +42,7 @@ async def initialize_llm_and_vectorstore() -> None:
     global LLM, VECTORSTORE
 
     try:
+        load_dotenv()
         openai_model="gpt-3.5-turbo"
         openai_api_key = os.getenv("OPENAI_API_KEY")
 
@@ -84,5 +85,4 @@ async def ask_question(question_input: QuestionInput) -> QuestionOutput:
         raise HTTPException(status_code=500, detail="Error processing the question") from e
 
 if __name__ == "__main__":
-    load_dotenv()
     uvicorn.run(app, host="0.0.0.0", port=5000)
