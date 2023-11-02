@@ -1,14 +1,15 @@
+import os
+import uvicorn
+from dotenv import load_dotenv
+from pydantic import BaseModel
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from g4f import Provider, models
-from langchain.llms.base import LLM
-from langchain_g4f import G4FLLM
-from langchain.document_loaders import TextLoader
-from langchain.embeddings import GPT4AllEmbeddings
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.vectorstores import Chroma
 from langchain.chains import RetrievalQA
+from langchain.vectorstores import Chroma
+from langchain.chat_models import ChatOpenAI
+from langchain.document_loaders import TextLoader
+from langchain.embeddings import HuggingFaceEmbeddings
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 app = FastAPI()
 
@@ -25,61 +26,63 @@ app.add_middleware(
 )
 
 class QuestionInput(BaseModel):
+    """Input for the question"""
     question: str
 
 class QuestionOutput(BaseModel):
-    answer: str
+    """Output for the question"""
+    query: str
+    resuly: str
 
-# Initialize llm and vectorstore at the module level
-llm = None
-vectorstore = None
+LLM = None
+VECTORSTORE = None
 
 async def initialize_llm_and_vectorstore() -> None:
-    global llm, vectorstore
+    """Initialize the LLM and Vectorstore"""
+    global LLM, VECTORSTORE
 
     try:
-        llm = G4FLLM(
-            model=models.default,
-            provider=Provider.Vercel,
-        )
+        openai_model="gpt-3.5-turbo"
+        openai_api_key = os.getenv("OPENAI_API_KEY")
 
         # load the files
         loader = TextLoader("./output.txt")
         data = loader.load()
 
         # split text
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=1024, chunk_overlap=128)
+        text_splitter = RecursiveCharacterTextSplitter(chunk_size=512, chunk_overlap=128)
         all_splits = text_splitter.split_documents(data)
 
         # embeddings
-        embedding = GPT4AllEmbeddings()
+        embedding_model = "shibing624/text2vec-base-chinese"
+        embedding = HuggingFaceEmbeddings(model_name=embedding_model)
 
-        vectorstore = Chroma.from_documents(documents=all_splits, embedding=embedding)
+        LLM = ChatOpenAI(temperature=0, openai_api_key=openai_api_key, model=openai_model)
+        VECTORSTORE = Chroma.from_documents(documents=all_splits, embedding=embedding)
 
     except Exception as e:
-        # Handle exceptions and raise an HTTPException with an appropriate status code
-        raise HTTPException(status_code=500, detail="Error initializing LLM and Vectorstore")
+        raise HTTPException(status_code=500, detail="Error initializing LLM and Vectorstore") from e
 
 @app.on_event("startup")
-async def startup_event():
+async def startup_event() -> None:
+    """Initialize the LLM and Vectorstore on startup"""
     await initialize_llm_and_vectorstore()
 
 @app.post("/api/ask", response_model=QuestionOutput)
-async def ask_question(question_input: QuestionInput):
-    if llm is None or vectorstore is None:
+async def ask_question(question_input: QuestionInput) -> QuestionOutput:
+    """Ask a question and get an answer"""
+    if LLM is None or VECTORSTORE is None:
         raise HTTPException(status_code=503, detail="LLM and Vectorstore not initialized")
 
     try:
-        qa_chain = RetrievalQA.from_chain_type(llm=llm, chain_type="stuff", retriever=vectorstore.as_retriever())
-
-        result = qa_chain({"query": question_input.question})
+        qa_chain = RetrievalQA.from_chain_type(llm=LLM, chain_type="stuff", retriever=VECTORSTORE.as_retriever())
         
-        return {"answer": result}
+        result = qa_chain({"query": question_input.question})
 
+        return result
     except Exception as e:
-        # Handle exceptions and raise an HTTPException with an appropriate status code
-        raise HTTPException(status_code=500, detail="Error processing the question")
+        raise HTTPException(status_code=500, detail="Error processing the question") from e
 
 if __name__ == "__main__":
-    import uvicorn
+    load_dotenv()
     uvicorn.run(app, host="0.0.0.0", port=5000)
