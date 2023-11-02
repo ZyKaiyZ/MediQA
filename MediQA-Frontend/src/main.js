@@ -9,7 +9,7 @@ import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 
 library.add(fas, far, fab);
 
-export const baseUrl = "http://backend:5000/api";
+export const baseUrl = "http://mediqa.eastus.cloudapp.azure.com/api";
 
 createApp(App)
 .component('font-awesome-icon', FontAwesomeIcon)
