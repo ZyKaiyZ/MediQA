@@ -32,7 +32,7 @@ class QuestionInput(BaseModel):
 class QuestionOutput(BaseModel):
     """Output for the question"""
     query: str
-    resuly: str
+    result: str
 
 LLM = None
 VECTORSTORE = None

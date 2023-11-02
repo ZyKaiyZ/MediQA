@@ -18,7 +18,7 @@ const getAnswer = async () => {
         const response = await axios.post(`${ baseUrl }/ask`, {
             "question": question.value
         });
-        answer.value = response.data.answer;
+        answer.value = response.data.result;
     } catch (error) {
         console.error('Error fetching answer:', error);
     }
