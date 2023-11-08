@@ -2,6 +2,6 @@ chromadb
 sentence-transformers
 fastapi
 uvicorn
-openai
+openai==0.28.1
 langchain
 python-dotenv

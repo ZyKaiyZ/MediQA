@@ -10,6 +10,7 @@ from langchain.chat_models import ChatOpenAI
 from langchain.document_loaders import TextLoader
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.prompts import PromptTemplate
 
 app = FastAPI()
 
@@ -47,7 +48,7 @@ async def initialize_llm_and_vectorstore() -> None:
         openai_api_key = os.getenv("OPENAI_API_KEY")
 
         # load the files
-        loader = TextLoader("./data.txt")
+        loader = TextLoader(data_file_path, encoding="utf-8")
         data = loader.load()
 
         # split text
@@ -76,10 +77,32 @@ async def ask_question(question_input: QuestionInput) -> QuestionOutput:
         raise HTTPException(status_code=503, detail="LLM and Vectorstore not initialized")
 
     try:
-        qa_chain = RetrievalQA.from_chain_type(llm=LLM, chain_type="stuff", retriever=VECTORSTORE.as_retriever())
+        prompt_template = """
+        基於提供的已知醫療資訊，用專業和簡潔的話來回答問題，如果無法從已知醫療資訊中得到答案，請回答 
+        "根據已知資訊無法回答該問題，建議求助醫生以獲取正確的回覆"，
+
+        {context}
+
+        問題: {question}
+        回答(使用繁體中文) : 
+        """
+        
+        PROMPT = PromptTemplate(
+            template=prompt_template, input_variables=["context", "question"]
+        )
+
+        chain_type_kwargs = {"prompt": PROMPT}
+        
+        qa_chain = RetrievalQA.from_chain_type(
+            llm=LLM,
+            chain_type="stuff",
+            retriever=VECTORSTORE.as_retriever(),
+            return_source_documents=True,
+            chain_type_kwargs=chain_type_kwargs
+        )
         
         result = qa_chain({"query": question_input.question})
-
+        print(result["source_documents"])
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail="Error processing the question") from e
