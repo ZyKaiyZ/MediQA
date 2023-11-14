@@ -48,7 +48,7 @@ async def initialize_llm_and_vectorstore() -> None:
         openai_api_key = os.getenv("OPENAI_API_KEY")
 
         # load the files
-        loader = TextLoader(data_file_path, encoding="utf-8")
+        loader = TextLoader("data.txt", encoding="utf-8")
         data = loader.load()
 
         # split text
@@ -78,8 +78,12 @@ async def ask_question(question_input: QuestionInput) -> QuestionOutput:
 
     try:
         prompt_template = """
-        基於提供的已知醫療資訊，用專業和簡潔的話來回答問題，如果無法從已知醫療資訊中得到答案，請回答 
+        基於以下提供的已知醫療資訊，用專業和簡潔的話來回答問題，
+        如果無法從已知醫療資訊中得到答案，請回答 
         "根據已知資訊無法回答該問題，建議求助醫生以獲取正確的回覆"，
+        如果提供的資訊內有相關內容可回答該問題，請回答 
+        "根據已知資訊，回答如下"，並提供已知資訊的相關內容
+        (不要擅自回答非以下提供的醫療資訊)。
 
         {context}
 
